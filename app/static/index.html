@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scholarship Tracker</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--ink:#1d2330;--muted:#667085;--line:#e4e7ec;--accent:#2f6fde;--ok:#1f9254;--warn:#b54708;--bad:#c4320a;--chip:#eef2f8}
+@media (prefers-color-scheme: dark){:root{--bg:#12151b;--card:#1b2029;--ink:#e6e9ef;--muted:#98a2b3;--line:#2b3240;--accent:#6c9cff;--ok:#4cc38a;--warn:#f5a524;--bad:#ff6b5e;--chip:#252c38}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{display:flex;gap:16px;align-items:center;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--card);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+header h1{font-size:16px;margin:0 12px 0 0}
+nav button{background:none;border:0;color:var(--muted);padding:8px 10px;border-radius:8px;cursor:pointer;font:inherit}
+nav button.on{background:var(--chip);color:var(--ink);font-weight:600}
+main{max-width:1200px;margin:0 auto;padding:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+.stat b{display:block;font-size:24px}.stat span{color:var(--muted)}
+table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.03em}
+tr.click{cursor:pointer}tr.click:hover{background:var(--chip)}
+.chip{display:inline-block;padding:2px 8px;border-radius:999px;background:var(--chip);font-size:12px;white-space:nowrap}
+.ok{color:var(--ok)}.warn{color:var(--warn)}.bad{color:var(--bad)}.muted{color:var(--muted)}
+button.b{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:7px 12px;cursor:pointer;font:inherit;margin:2px}
+button.s{background:var(--chip);color:var(--ink)}button.r{background:var(--bad)}
+button:disabled{opacity:.5;cursor:default}
+input,select,textarea{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+pre{white-space:pre-wrap;background:var(--chip);padding:10px;border-radius:8px;max-height:360px;overflow:auto;margin:6px 0}
+.steps{display:flex;gap:4px;flex-wrap:wrap;margin:10px 0}.steps div{flex:1;min-width:92px;padding:6px 8px;border-radius:8px;background:var(--chip);font-size:12px;color:var(--muted)}
+.steps div.done{background:color-mix(in srgb,var(--ok) 18%,var(--card));color:var(--ink)}.steps div.cur{outline:2px solid var(--accent);color:var(--ink);font-weight:600}
+.banner{padding:10px 14px;border-radius:10px;margin-bottom:16px;background:color-mix(in srgb,var(--warn) 15%,var(--card));border:1px solid var(--warn)}
+#toast{position:fixed;bottom:16px;right:16px;max-width:460px;background:var(--ink);color:var(--bg);padding:10px 14px;border-radius:10px;display:none;white-space:pre-wrap;z-index:9}
+iframe{width:100%;height:420px;border:1px solid var(--line);border-radius:8px;background:#fff}
+h2{font-size:15px;margin:0 0 10px}h3{font-size:14px;margin:14px 0 6px}
+@media (max-width:640px){main{padding:12px}td,th{padding:6px 4px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Scholarship Tracker</h1>
+  <nav id="nav"></nav>
+  <span id="mode" class="muted" style="margin-left:auto"></span>
+</header>
+<main id="main"></main>
+<div id="toast"></div>
+<script>
+const TABS=[["overview","Overview"],["discover","1 Scout"],["apps","2-7 Applicant"],["approvals","Approvals"],["mail","8 Monitor"],["agents","Agents & jobs"],["health","Health"]];
+const STEPS=[["SEARCH",["DISCOVERED"]],["RANK",["SHORTLISTED","BELOW_THRESHOLD","INELIGIBLE"]],["APPROVE #1",["AWAITING_APPLY","SKIPPED"]],["PREPARE",["PREPARING","READY_TO_FILL"]],["FILL",["FILLING","NEEDS_USER"]],["APPROVE #2",["AWAITING_SUBMIT","SUBMITTING"]],["SUBMIT",["SUBMITTED"]],["TRACK",["UNDER_REVIEW","INTERVIEW","WAITING_FOR_DOCUMENTS","ADMITTED","REJECTED","ACCEPTED_BY_USER","DECLINED_BY_USER"]]];
+const NEXT={AWAITING_APPLY:"approve #1 (APPLY) below",PREPARING:"packet is being built",READY_TO_FILL:"fill the form (step 5); sign in to the portal first if it needs an account",FILLING:"worker is filling the form",NEEDS_USER:"the worker stopped; see the problem screenshot, fix it, then retry",AWAITING_SUBMIT:"check the screenshots and SOP; tick declarations and pay any fee in the portal; then approve #2 (SUBMIT)",SUBMITTING:"approval #2 granted; submit now",SUBMITTED:"wait for the confirmation email; the Monitor watches Gmail",UNDER_REVIEW:"wait; the Monitor watches Gmail",INTERVIEW:"prepare for the interview",WAITING_FOR_DOCUMENTS:"upload the requested documents in the portal",ADMITTED:"decide: accept or decline the offer",SKIPPED:"you declined approval #1; re-rank to ask again"};
+let TOKEN=null, tab=location.hash.slice(1)||"overview", OV={};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const toast=(m,ms=4500)=>{const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(t._h);t._h=setTimeout(()=>t.style.display="none",ms)};
+async function get(u){const r=await fetch(u,{credentials:"same-origin"});if(r.status==401){document.body.innerHTML="<main><div class=card>Session expired. Open the URL printed by <code>tracker app</code> again.</div></main>";throw 0}return r.json()}
+async function post(u,b={}){const tk=document.cookie;const r=await fetch(u,{method:"POST",credentials:"same-origin",headers:{"Content-Type":"application/json","X-Tracker-Token":TOKEN},body:JSON.stringify(b)});const j=await r.json();if(j.error){toast("⚠ "+j.error,7000);throw j}return j}
+function statusChip(s){const cls=/SUBMITTED|ADMITTED|ACCEPTED/.test(s)?"ok":/INELIGIBLE|REJECTED|EXPIRED|WITHDRAWN|NEEDS_USER/.test(s)?"bad":/AWAITING/.test(s)?"warn":"";return `<span class="chip ${cls}">${esc(s)}</span>`}
+function fmtDate(d){return d?esc(String(d).slice(0,10)):'<span class=muted>-</span>'}
+function days(d){if(!d)return"";const n=Math.round((new Date(d.slice(0,10))-new Date())/864e5);return `<span class="${n<14?"bad":n<30?"warn":"muted"}">${n}d</span>`}
+
+function renderNav(){$("#nav").innerHTML=TABS.map(([k,l])=>`<button class="${k==tab?"on":""}" onclick="go('${k}')">${l}</button>`).join("")}
+function go(t){tab=t;location.hash=t;renderNav();render()}
+async function render(){OV=await get("/api/overview");$("#mode").textContent=`fetch: ${OV.fetch_mode} · mail: ${OV.mail_source} · LLM: ${OV.ollama?"Ollama":"rules only"}`;const f={overview,discover,apps,approvals:approvalsTab,mail,agents,health}[tab];$("#main").innerHTML=(OV.dev_approvals?`<div class=banner>Dev approvals are ON: you can approve here with your PIN. In real use, approve through the Telegram approval bot or <code>tracker approve &lt;id&gt;</code>.</div>`:"")+await f()}
+
+async function overview(){
+  const s=OV.status, by=s.applications_by_status||{};
+  const count=k=>k.reduce((a,x)=>a+(by[x]||0),0);
+  const stats=[["Discovered",count(["DISCOVERED"])],["Shortlisted",count(["SHORTLISTED","AWAITING_APPLY"])],["Preparing / filling",count(["PREPARING","READY_TO_FILL","FILLING","NEEDS_USER"])],["Waiting approval #2",count(["AWAITING_SUBMIT"])],["Submitted",count(["SUBMITTED","UNDER_REVIEW","INTERVIEW","WAITING_FOR_DOCUMENTS"])],["Approvals pending",s.approvals_pending],["Candidates to review",s.candidates_needing_review]];
+  return `<div class="grid">${stats.map(([l,n])=>`<div class="card stat"><b>${n}</b><span>${l}</span></div>`).join("")}</div>
+  <div class=card><h2>Run the pipeline</h2><div class=row>
+   <button class=b onclick="runAgent('scout-all')">1 Scout: search all sources</button>
+   <button class=b onclick="runAgent('applicant')">2-4 Applicant: rank, request approval #1 for each shortlisted, prepare approved</button>
+   <button class=b onclick="runAgent('monitor')">8 Monitor: mail + reminders</button>
+   <button class="b s" onclick="runAgent('dispatch')">Deliver notifications</button></div>
+   <p class=muted>${OV.pin_set?"":"<b class=bad>No approval PIN set.</b> Run <code>tracker approvals set-pin</code>. "}Agents run in the background; this page refreshes when they finish.</p></div>
+  <div class=card><h2>Upcoming deadlines</h2>${table(OV.upcoming,[["#","id"],["Opportunity",r=>`<a href="#" onclick="openApp(${r.id});return false">${esc(r.name)}</a>`],["Status",r=>statusChip(r.status)],["Score","score"],["Deadline",r=>fmtDate(r.deadline)+" "+days(r.deadline)]])}</div>`}
+
+function table(rows,cols,click){if(!rows||!rows.length)return'<p class=muted>Nothing yet.</p>';return `<table><tr>${cols.map(c=>`<th>${c[0]}</th>`).join("")}</tr>${rows.map(r=>`<tr ${click?`class=click onclick="${click(r)}"`:""}>${cols.map(c=>`<td>${typeof c[1]=="function"?c[1](r):esc(r[c[1]])}</td>`).join("")}</tr>`).join("")}</table>`}
+
+async function runAgent(n){let r;try{r=await post("/api/run/"+n)}catch(e){return}toast(r.started?`${n} started…`:JSON.stringify(r,null,1));if(r.started)poll(n=="scout-all"?"scout":n)}
+async function poll(n){for(let i=0;i<600;i++){await new Promise(r=>setTimeout(r,1000));const j=await get("/api/jobs");const st=j.running[n];if(st&&st.state!="running"){toast(`${n}: ${st.state}\n`+JSON.stringify(st.result||st.error,null,1).slice(0,900),9000);render();return}}}
+
+async function discover(){
+  const [src,cand,leads]=await Promise.all([get("/api/sources"),get("/api/candidates"),get("/api/leads")]);
+  const review=cand.filter(c=>c.review_status=="needs_user_review");
+  return `<div class=card><h2>Candidates waiting for you (${review.length})</h2><p class=muted>The fake check stopped these. Read the reasons and the excerpt, then accept or reject.</p>
+  ${review.map(c=>{const d=JSON.parse(c.extracted_json);return `<div class=card><div class=row><b>${esc(d.name)}</b><span class=chip>${esc(d.funding_type)}</span><span class=chip>deadline ${fmtDate(d.deadline)}</span></div>
+   <p><a href="${esc(c.url)}" target=_blank rel=noopener>${esc(c.url)}</a></p><p class=warn>${c.review_reasons.map(esc).join("<br>")}</p><pre>${esc(c.excerpt)}</pre>
+   ${c.review_reasons.some(x=>x.startsWith("deadline passed"))?'<span class=muted>Deadline passed: cannot be accepted. </span>':`<button class=b onclick="candAct(${c.id},'accept')">Accept (verified by me)</button>`}<button class="b r" onclick="candAct(${c.id},'reject')">Reject</button></div>`}).join("")||"<p class=muted>None.</p>"}</div>
+  <div class=card><h2>Add a source or propose a URL</h2><div class=row><input id=url placeholder="https://..." style="flex:1;min-width:260px"><select id=tier><option>web</option><option>university</option><option>catalog</option><option>country</option><option>lead</option></select>
+   <button class=b onclick="addSource()">Add to registry</button><button class="b s" onclick="propose()">Check this page now</button></div></div>
+  <div class=card><h2>Source registry and coverage</h2>${table(src,[["Name","name"],["Tier","tier"],["Last checked",r=>fmtDate(r.last_checked_at)],["Found","found"],["State",r=>`<span class="${r.state=="ok"?"ok":r.state=="failing"?"bad":"warn"}">${esc(r.state)}</span>`]])}</div>
+  <div class=card><h2>All candidates</h2>${table(cand,[["#","id"],["Name",r=>esc(JSON.parse(r.extracted_json).name)],["Status",r=>`<span class=chip>${esc(r.review_status)}</span> ${r.accepted_by?"by "+esc(r.accepted_by):""}`],["Application",r=>r.application_status?statusChip(r.application_status):""],["Model","model"],["Reasons",r=>r.review_reasons.length?`<span class=muted>${r.review_status=="accepted"&&r.accepted_by=="user"?"Fake-check flags you overrode: ":""}${r.review_reasons.map(esc).join("; ")}</span>`:""]])}</div>
+  <div class=card><h2>Leads (Telegram, aggregators)</h2><p class=muted>A post is never evidence: it is resolved to an official page or dropped.</p>${table(leads,[["Class","classification"],["Status","status"],["Why dropped","drop_reason"],["Official page",r=>r.official_url?`<a href="${esc(r.official_url)}" target=_blank rel=noopener>link</a>`:""],["Post",r=>`<span class=muted>${esc((r.excerpt||"").slice(0,140))}</span>`]])}</div>`}
+async function candAct(id,a){await post(`/api/candidates/${id}/${a}`);toast(a=="accept"?"Accepted: it is now an application (DISCOVERED). Run the Applicant to rank it.":"Rejected");render()}
+async function addSource(){await post("/api/sources",{url:$("#url").value,tier:$("#tier").value});toast("Source added");render()}
+async function propose(){const r=await post("/api/propose-url",{url:$("#url").value});toast(JSON.stringify(r,null,1));render()}
+
+async function apps(){const a=await get("/api/applications");
+  return `<div class=card><h2>Applications</h2><p class=muted>Click a row for details, the step tracker and actions.</p>${table(a,[["#","id"],["Opportunity","name"],["Status",r=>statusChip(r.status)],["Eligibility",r=>esc((r.eligibility_class||"").replace(/_/g," ").toLowerCase())],["Score","score"],["Funding","funding_type"],["Region","region"],["Deadline",r=>fmtDate(r.deadline)+" "+days(r.deadline)]],r=>`openApp(${r.id})`)}</div><div id=detail></div>`}
+
+async function openApp(id){if(tab!="apps"){tab="apps";location.hash="apps";renderNav();await render()}const d=await get("/api/applications/"+id);const a=d.application,o=d.opportunity,p=d.packet;
+  const idx=STEPS.findIndex(s=>s[1].includes(a.status));
+  const stepper=`<div class=steps>${STEPS.map((s,i)=>`<div class="${i<idx?"done":i==idx?"cur":""}">${i+1} ${s[0]}</div>`).join("")}</div>`;
+  const reasons=a.reasons_json?JSON.parse(a.reasons_json):{};const unk=a.unknowns_json?JSON.parse(a.unknowns_json):[];
+  const bd=a.breakdown_json?JSON.parse(a.breakdown_json):{};
+  const run=d.fill_runs[0];const pend=d.approvals.filter(x=>x.decision=="pending");
+  let actions="";
+  if(["SKIPPED","BELOW_THRESHOLD","INELIGIBLE"].includes(a.status))actions+=`<button class="b s" onclick="appAct(${id},'rerank')">Re-rank</button>`;
+  if(a.status=="READY_TO_FILL")actions+=`<button class=b onclick="appAct(${id},'fill',{mode:'simulate'})">5 Fill (simulated portal)</button><button class="b s" onclick="appAct(${id},'fill',{mode:'playwright'})">5 Fill with real browser (Playwright)</button>`;
+  if(a.status=="NEEDS_USER")actions+=`<button class=b onclick="appAct(${id},'retry')">I fixed it, retry</button>`;
+  if(["READY_TO_FILL","NEEDS_USER"].includes(a.status))actions+=`<button class="b s" onclick="appAct(${id},'rebuild')">Rebuild packet</button>`;
+  if(a.status=="SUBMITTING")actions+=`<button class=b onclick="appAct(${id},'submit')">7 Submit (simulated)</button>`;
+  if(a.status=="AWAITING_SUBMIT"&&run&&run.mode=="simulate")actions+=`<span class=muted>Simulate editing in the portal after the screenshots:</span><input id=ef placeholder=field value=gpa size=8><input id=ev placeholder=value value=3.9 size=8><button class="b s" onclick="simEdit(${id})">Change field</button>`;
+  if(!o.verified_at)actions+=`<button class="b s" onclick="appAct(${id},'verify')">I verified the official page</button>`;
+  actions+=`<button class="b r" onclick="if(confirm('Withdraw?'))appAct(${id},'withdraw')">Withdraw</button>`;
+  $("#detail").innerHTML=`<div class=card><div class=row><h2 style="margin:0">#${id} ${esc(o.name)}</h2>${statusChip(a.status)}</div>${stepper}
+   <p><a href="${esc(o.official_url)}" target=_blank rel=noopener>${esc(o.official_url)}</a> · ${esc(o.funding_type)} funding ${o.amount?esc(o.currency+" "+o.amount):""} · deadline ${fmtDate(o.deadline)} ${esc(o.deadline_tz||"")} ${days(o.deadline)} · ${o.verified_at?"<span class=ok>verified by you</span>":o.rechecked_at?"re-checked by applicant "+fmtDate(o.rechecked_at):"<span class=warn>unverified</span>"}</p>
+   <p><b>Next:</b> ${esc(NEXT[a.status]||a.next_action||"")}</p><div class=row>${actions}</div>
+   ${pend.map(x=>approvalCard(x)).join("")}
+   <h3>Eligibility and score</h3><p>${esc((a.eligibility_class||"").replace(/_/g," "))} · score <b>${a.score??"-"}</b> ${Object.entries(bd).map(([k,v])=>`<span class=chip>${k} ${v}</span>`).join(" ")}</p>
+   <p class=ok>${(reasons.passes||[]).map(esc).join("<br>")}</p><p class=bad>${(reasons.fails||[]).map(esc).join("<br>")}</p><p class=warn>${unk.map(esc).join("<br>")}</p><p class=muted>${(reasons.recheck||[]).map(esc).join("<br>")}</p>
+   ${p?`<h3>Packet v${p.version}</h3><div class=row><span class=chip>checksum ${esc(p.checksum.slice(0,12))}</span></div>
+     <details><summary>Form answers</summary><pre>${esc(JSON.stringify(JSON.parse(p.answers_json),null,2))}</pre></details>
+     <details><summary>Checklist</summary><pre>${esc(JSON.parse(p.checklist_json).map(i=>"☐ "+i.item).join("\n"))}</pre></details>
+     <details><summary>Documents</summary><pre>${esc(JSON.parse(p.documents_json).map(x=>(x.exists?"✓ ":"✗ MISSING ")+x.key).join("\n"))}</pre></details>
+     ${(()=>{const ph=(p.sop_text.match(/\[[A-Z][A-Z0-9 ,.'#\/()&-]{5,}[^\]]*\]/g)||[]);const editable=["READY_TO_FILL","NEEDS_USER"].includes(a.status);
+       return `<details open><summary>SOP ${ph.length?`<span class=bad>(${ph.length} unfinished placeholder${ph.length>1?"s":""}: fill them in before step 5)</span>`:'<span class=ok>(no placeholders)</span>'}</summary>
+       ${editable?`<textarea id=sopedit rows=16 style="width:100%">${esc(p.sop_text)}</textarea><button class=b onclick="saveSop(${id})">Save SOP (new packet version)</button>`:`<pre>${esc(p.sop_text)}</pre>`}</details>`})()}
+     <details><summary>Tailored CV</summary><pre>${esc(p.cv_text)}</pre></details>
+     <details><summary>Reference request drafts</summary><pre>${esc(JSON.parse(p.reference_drafts_json).map(r=>"To: "+r.to+"\nSubject: "+r.subject+"\n\n"+r.body).join("\n\n----\n\n"))}</pre></details>`:""}
+   ${d.evidence.length?`<h3>Screenshots and evidence</h3><div class=row>${d.evidence.map(e=>e.url?`<button class="b s" onclick="showEv('${e.url}')">${esc(e.note||e.kind)}</button>`:`<span class=chip>${esc(e.note)}</span>`).join("")}</div><div id=ev></div>`:""}
+   <h3>Tasks</h3>${table(d.tasks,[["Task","title"],["Due",r=>fmtDate(r.due_at)],["Status",r=>r.status=="DONE"?"<span class=ok>done</span>":`<button class="b s" onclick="taskDone(${r.id},${id})">Mark done</button>`]])}
+   <h3>Status history</h3>${table(d.history,[["When",r=>esc(r.changed_at.slice(0,19))],["From","old_status"],["To","new_status"],["Actor","actor"],["Reason","reason"]])}
+   ${d.emails.length?`<h3>Emails</h3>${table(d.emails,[["From","from_addr"],["Subject","subject"],["Category","category"]])}`:""}</div>`;
+  $("#detail").scrollIntoView({behavior:"smooth"})}
+function showEv(u){$("#ev").innerHTML=/\.png/.test(u)?`<img src="${u}" style="max-width:100%">`:`<iframe sandbox src="${u}"></iframe>`}
+async function appAct(id,a,b={}){let r;try{r=await post(`/api/applications/${id}/${a}`,b)}catch(e){await render();openApp(id);return}toast(JSON.stringify(r,null,1).slice(0,700));if(r.started)poll(r.started);await render();openApp(id)}
+async function saveSop(id){await appAct(id,"sop",{text:$("#sopedit").value})}
+async function simEdit(id){await appAct(id,"sim-edit",{field:$("#ef").value,value:$("#ev").value})}
+async function taskDone(t,id){await post(`/api/tasks/${t}`,{status:"DONE"});openApp(id)}
+
+function approvalCard(x){return `<div class=card style="border-color:var(--warn)"><div class=row><b>${esc(x.action_type)} #${x.id}</b><span class=muted>expires ${esc(x.expires_at.slice(0,16))}Z</span></div><pre>${esc(x.summary)}</pre>
+ ${OV.dev_approvals?`<div class=row><input type=password id=pin${x.id} placeholder="PIN" size=8 inputmode=numeric><button class=b onclick="decide(${x.id},true)">Approve</button><button class="b r" onclick="decide(${x.id},false)">Reject</button></div>`:`<p class=muted>Approve on your phone (approval bot) or run <code>tracker approve ${x.id}</code> in a terminal.</p>`}</div>`}
+async function decide(id,ok){const pin=$("#pin"+id).value;let r;try{r=await post(`/api/approvals/${id}/decide`,{approve:ok,pin})}catch(e){return}toast(`#${id}: ${r.result}${r.message?" - "+r.message:""}${r.prepared&&r.prepared.length?"\nPacket built automatically (step 4).":""}${r.sent!==undefined?"\nemail sent: "+r.sent:""}`,8000);render()}
+async function approvalsTab(){const p=await get("/api/approvals"),all=await get("/api/approvals?all=1");
+  return `<div class=card><h2>Pending approvals (${p.length})</h2><p class=muted>APPLY = approval #1 (is it worth applying?). SUBMIT = approval #2 (exactly this form). STATUS and REPLY come from email.</p>${p.map(approvalCard).join("")||"<p class=muted>Nothing waiting.</p>"}</div>
+  <div class=card><h2>History</h2>${table(all,[["#","id"],["Type","action_type"],["Decision",r=>`<span class=chip>${esc(r.decision)}</span>`],["Via","decided_via"],["Requested",r=>esc(r.requested_at.slice(0,16))],["Summary",r=>`<span class=muted>${esc(r.summary.split("\n")[0])}</span>`]])}</div>`}
+
+async function mail(){const [e,r]=await Promise.all([get("/api/emails"),get("/api/replies")]);
+  return `<div class=card><h2>Emails</h2><p class=muted>Bodies are never stored. The classifier only proposes; a STATUS approval changes the status.</p>${table(e,[["Received",r=>fmtDate(r.received_at)],["From",r=>esc(r.from_addr)+(r.suspicious?' <span class="chip bad">reply-to mismatch</span>':"")],["Subject","subject"],["Category",r=>`<span class=chip>${esc(r.category)}</span>`],["Application",r=>r.application_id?`<a href="#" onclick="openApp(${r.application_id});return false">#${r.application_id}</a>`:'<span class=muted>not linked</span>']])}</div>
+  <div class=card><h2>Reply drafts</h2>${table(r,[["To","recipient"],["Subject","subject"],["Status",r=>`<span class=chip>${esc(r.status)}</span>`],["Body",r=>`<pre>${esc(r.body)}</pre>`]])}</div>`}
+
+async function agents(){const j=await get("/api/jobs"),ev=await get("/api/events");
+  return `<div class=card><h2>Agents</h2><div class=row><button class=b onclick="runAgent('scout')">Scout (due sources only)</button><button class=b onclick="runAgent('scout-all')">Scout (all sources)</button><button class=b onclick="runAgent('applicant')">Applicant</button><button class=b onclick="runAgent('monitor')">Monitor</button><button class="b s" onclick="runAgent('run-due')">run-due (what the systemd timer runs)</button></div>
+  <pre>${esc(JSON.stringify(j.running,null,1))}</pre></div>
+  <div class=card><h2>Job runs</h2>${table(j.runs,[["#","id"],["Job","job_name"],["Started",r=>esc(r.started_at.slice(0,19))],["Outcome",r=>`<span class="${r.outcome=="ok"?"ok":r.outcome=="failed"?"bad":"warn"}">${esc(r.outcome)}</span>`],["Summary",r=>`<details><summary>show</summary><pre>${esc(JSON.stringify(r.summary_json?JSON.parse(r.summary_json):{},null,1))}</pre></details>`]])}</div>
+  <div class=card><h2>Notifications (outbox)</h2>${table(ev.slice(0,40),[["#","id"],["Event","event_type"],["Created",r=>esc(r.created_at.slice(0,19))],["Delivered",r=>r.delivered_at?"<span class=ok>yes</span>":`<span class=warn>no (${r.attempts})</span>`],["Payload",r=>`<span class=muted>${esc(r.payload_json.slice(0,160))}</span>`]])}</div>`}
+
+async function health(){const h=await get("/api/health");
+  return `<div class=card><h2>Health</h2><pre>${esc(JSON.stringify(h,null,2))}</pre><button class="b s" onclick="runAgent('backup')">Create backup + restore test</button></div>`}
+
+(async()=>{TOKEN=(document.cookie.match(/(?:^|; )tkh=([^;]+)/)||[])[1];if(!TOKEN){const r=await fetch("/api/session",{credentials:"same-origin"});TOKEN=(await r.json()).token}renderNav();await render();const m=location.hash.match(/app-(\d+)/);if(m)openApp(+m[1])})();
+</script>
+</body>
+</html>

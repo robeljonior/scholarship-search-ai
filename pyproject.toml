@@ -1,0 +1,16 @@
+[project]
+name = "scholarship-tracker"
+version = "2.0.0"
+description = "Local-first AI scholarship tracker: Scout, Applicant, Monitor"
+requires-python = ">=3.10"
+dependencies = []  # core is stdlib only
+
+[project.optional-dependencies]
+browser = ["playwright>=1.40"]
+gmail = ["google-api-python-client>=2.100", "google-auth-oauthlib>=1.1"]
+
+[project.scripts]
+tracker = "shared.cli:main"
+
+[tool.setuptools]
+packages = ["shared", "search_find_validate", "validateagain_applay", "track_response", "app", "demo"]

@@ -1,0 +1,13 @@
+{
+  "fetch_mode": "live",
+  "mail_source": "gmail",
+  "ollama_host": "http://127.0.0.1:11434",
+  "models": {"extract": "qwen2.5:7b-instruct", "classify": "qwen2.5:3b-instruct", "draft": "qwen2.5:7b-instruct"},
+  "use_llm": true,
+  "shortlist_threshold": 60,
+  "max_apply_requests_per_run": 5,
+  "min_prep_days": 7,
+  "region_preference": ["Europe", "Canada", "Australia", "USA"],
+  "telegram": {"bot_token": "", "chat_id": ""},
+  "app": {"host": "127.0.0.1", "port": 8765, "dev_approvals": false}
+}

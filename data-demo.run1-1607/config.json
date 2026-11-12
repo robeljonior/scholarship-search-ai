@@ -1,0 +1,9 @@
+{
+  "fetch_mode": "demo",
+  "mail_source": "demo",
+  "app": {
+    "host": "127.0.0.1",
+    "port": 8765,
+    "dev_approvals": true
+  }
+}

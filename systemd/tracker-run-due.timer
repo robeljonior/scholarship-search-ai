@@ -1,0 +1,11 @@
+[Unit]
+Description=Scholarship tracker daily run (and at boot, catching up missed runs)
+
+[Timer]
+OnBootSec=5min
+OnCalendar=*-*-* 08:00:00
+OnUnitActiveSec=4h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,14 @@
+[
+  {
+    "to": "referee1@example.edu",
+    "name": "Dr. Referee One",
+    "subject": "Reference request: Erasmus Mundus Joint Master in Artificial Intelligence (demo)",
+    "body": "Dear Dr. Referee One,\n\nI am applying to Erasmus Mundus Joint Master in Artificial Intelligence (demo) (deadline 2027-01-15). Would you be willing to write a reference letter for me as my thesis supervisor? The portal will email you a link once I register you as a referee. I can send my CV and statement of purpose to help.\n\nThank you,\nYour Name"
+  },
+  {
+    "to": "referee2@example.com",
+    "name": "Referee Two",
+    "subject": "Reference request: Erasmus Mundus Joint Master in Artificial Intelligence (demo)",
+    "body": "Dear Referee Two,\n\nI am applying to Erasmus Mundus Joint Master in Artificial Intelligence (demo) (deadline 2027-01-15). Would you be willing to write a reference letter for me as my line manager? The portal will email you a link once I register you as a referee. I can send my CV and statement of purpose to help.\n\nThank you,\nYour Name"
+  }
+]

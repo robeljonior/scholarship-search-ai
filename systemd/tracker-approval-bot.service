@@ -1,0 +1,13 @@
+[Unit]
+Description=Scholarship tracker approval bot (Telegram, tracker-owned)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/Videos/3dportfolio/ollama/phase2
+Environment=TRACKER_HOME=%h/Videos/3dportfolio/ollama/phase2/data
+ExecStart=%h/Videos/3dportfolio/ollama/phase2/tracker.sh bot run
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=default.target

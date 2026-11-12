@@ -1,0 +1,56 @@
+{
+  "_comment": "Field mapping for the local demo portal served by `tracker app` at /demo-portal/. Copy this file per real portal: selectors -> packet answer keys. Declarations are never ticked by the worker.",
+  "match_url": "http://127.0.0.1:8765/demo-portal/",
+  "start_url": "http://127.0.0.1:8765/demo-portal/start",
+  "logged_in_selector": "#logged-in",
+  "pages": [
+    {
+      "name": "Personal details",
+      "marker": "#page-personal",
+      "fields": [
+        {"selector": "#full_name", "key": "full_name"},
+        {"selector": "#email", "key": "email"},
+        {"selector": "#nationality", "key": "nationality"},
+        {"selector": "#date_of_birth", "key": "date_of_birth"}
+      ],
+      "next": "#next"
+    },
+    {
+      "name": "Education",
+      "marker": "#page-education",
+      "fields": [
+        {"selector": "#degree_field", "key": "degree_field"},
+        {"selector": "#university", "key": "university"},
+        {"selector": "#gpa", "key": "gpa"},
+        {"selector": "#english_score", "key": "english_score"}
+      ],
+      "next": "#next"
+    },
+    {
+      "name": "Statement of purpose",
+      "marker": "#page-sop",
+      "fields": [
+        {"selector": "#sop", "key": "sop"}
+      ],
+      "next": "#next"
+    }
+  ],
+  "review": {
+    "marker": "#page-review",
+    "fee": "#fee",
+    "declaration": "#declaration-text",
+    "readback": [
+      {"selector": "#r-full_name", "key": "full_name"},
+      {"selector": "#r-email", "key": "email"},
+      {"selector": "#r-nationality", "key": "nationality"},
+      {"selector": "#r-date_of_birth", "key": "date_of_birth"},
+      {"selector": "#r-degree_field", "key": "degree_field"},
+      {"selector": "#r-university", "key": "university"},
+      {"selector": "#r-gpa", "key": "gpa"},
+      {"selector": "#r-english_score", "key": "english_score"},
+      {"selector": "#r-sop", "key": "sop"}
+    ]
+  },
+  "submit": "#submit",
+  "confirmation": {"marker": "#confirmation", "reference": "#ref"}
+}

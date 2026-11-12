@@ -1,0 +1,46 @@
+[
+  {
+    "item": "transcript",
+    "type": "document"
+  },
+  {
+    "item": "diploma",
+    "type": "document"
+  },
+  {
+    "item": "passport",
+    "type": "document"
+  },
+  {
+    "item": "english_test",
+    "type": "document"
+  },
+  {
+    "item": "cv",
+    "type": "document"
+  },
+  {
+    "item": "statement of purpose",
+    "type": "document"
+  },
+  {
+    "item": "motivation letter",
+    "type": "document"
+  },
+  {
+    "item": "recommendation",
+    "type": "document"
+  },
+  {
+    "item": "reference letter 1",
+    "type": "reference"
+  },
+  {
+    "item": "reference letter 2",
+    "type": "reference"
+  },
+  {
+    "item": "English test (IELTS 6.5)",
+    "type": "test"
+  }
+]

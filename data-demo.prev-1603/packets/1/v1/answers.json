@@ -1,0 +1,18 @@
+{
+  "full_name": "Your Name",
+  "email": "you@example.com",
+  "phone": "+251 900 000 000",
+  "date_of_birth": "1999-01-01",
+  "nationality": "Ethiopia",
+  "country_of_residence": "Ethiopia",
+  "degree_level": "bachelor",
+  "degree_field": "Computer Science",
+  "university": "Your University",
+  "graduation_year": 2022,
+  "gpa": 3.6,
+  "gpa_scale": 4.0,
+  "english_test": "IELTS",
+  "english_score": 7.0,
+  "work_experience_years": 2,
+  "program_name": "Erasmus Mundus Joint Master in Artificial Intelligence (demo)"
+}

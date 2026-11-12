@@ -1,0 +1,8 @@
+[Unit]
+Description=Scholarship tracker: run due jobs (recovery-safe)
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Videos/3dportfolio/ollama/phase2
+Environment=TRACKER_HOME=%h/Videos/3dportfolio/ollama/phase2/data
+ExecStart=%h/Videos/3dportfolio/ollama/phase2/tracker.sh --json jobs run-due

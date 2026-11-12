@@ -1,0 +1,64 @@
+{
+  "full_name": "Your Name",
+  "email": "you@example.com",
+  "phone": "+251 900 000 000",
+  "date_of_birth": "1999-01-01",
+  "nationality": "Ethiopia",
+  "country_of_residence": "Ethiopia",
+  "degree": {
+    "level": "bachelor",
+    "field": "Computer Science",
+    "university": "Your University",
+    "graduation_year": 2022,
+    "gpa": 2.78,
+    "gpa_scale": 4.0
+  },
+  "english": {
+    "test": "IELTS",
+    "score": 5.5,
+    "date": "2026-06-01"
+  },
+  "work_experience_years": 2,
+  "target_fields": [
+    "Artificial Intelligence",
+    "Machine Learning",
+    "Data Science",
+    "Computer Science"
+  ],
+  "interests": "machine learning for healthcare, low-resource NLP",
+  "career_goal": "build AI systems that improve public services in East Africa",
+  "experience": [
+    {
+      "title": "Software Engineer",
+      "org": "Example Tech PLC",
+      "from": "2022-09",
+      "to": "present",
+      "summary": "Built data pipelines and ML models for demand forecasting."
+    }
+  ],
+  "skills": [
+    "Python",
+    "PyTorch",
+    "SQL",
+    "Docker"
+  ],
+  "referees": [
+    {
+      "name": "Dr. Referee One",
+      "email": "referee1@example.edu",
+      "relation": "thesis supervisor"
+    },
+    {
+      "name": "Referee Two",
+      "email": "referee2@example.com",
+      "relation": "line manager"
+    }
+  ],
+  "documents": {
+    "transcript": "documents/transcript.pdf",
+    "diploma": "documents/diploma.pdf",
+    "passport": "documents/passport.pdf",
+    "english_test": "documents/ielts.pdf",
+    "cv_master": "documents/cv_master.md"
+  }
+}
